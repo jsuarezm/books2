@@ -1,0 +1,103 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  BooksApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: dev 
+      Cors: 
+        AllowMethods: "'*'"
+        AllowHeaders: "'*'"
+        AllowOrigin: "'*'"
+      GatewayResponses:
+        DEFAULT_4xx:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+        DEFAULT_5xx:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"      
+  DynamoBooksTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: books
+      PrimaryKey:
+        Name: id
+        Type: String
+  CreateBookFunction: # 1
+    Type: AWS::Serverless::Function # 2
+    Properties:
+      CodeUri: src/ # 3
+      Handler: create-book.handler # 4
+      Policies: AmazonDynamoDBFullAccess # 5
+      Runtime: nodejs14.x
+      Events:
+        CreateBook: # 6
+          Type: Api
+          Properties:
+            RestApiId: !Ref BooksApi
+            Path: /books #7
+            Method: post
+  GetBooksFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: get-books.handler
+      Policies: AmazonDynamoDBFullAccess
+      Runtime: nodejs14.x
+      Events:
+        GetBooks:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BooksApi
+            Path: /books
+            Method: get
+  GetBookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: get-book.handler
+      Policies: AmazonDynamoDBFullAccess
+      Runtime: nodejs14.x
+      Events:
+        GetBook:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BooksApi
+            Path: /books/{id}
+            Method: get
+  UpdateBookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: update-book.handler
+      Policies: AmazonDynamoDBFullAccess
+      Runtime: nodejs14.x
+      Events:
+        UpdateBook:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BooksApi
+            Path: /books/{id}
+            Method: PUT
+  DeleteBookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: delete-book.handler
+      Policies: AmazonDynamoDBFullAccess
+      Runtime: nodejs14.x
+      Events:
+        DeleteBook:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BooksApi
+            Path: /books/{id}
+            Method: delete
+
+Outputs:
+  BookApi:
+    Description: "API Gateway endpoint URL for PROD stage for Peekal API Middleware"
+    Value: !Sub "https://${BooksApi}.execute-api.${AWS::Region}.amazonaws.com/dev/"
+                
